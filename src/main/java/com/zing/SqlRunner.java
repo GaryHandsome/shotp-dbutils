@@ -185,6 +185,81 @@ public class SqlRunner {
         return list;
     }
 
+
+    /**
+     * 查询数据，返回数据表的一行数据
+     *
+     * @param clazz
+     * @param sql
+     * @param params
+     * @param <T>
+     * @return
+     */
+    public <T> T query4Entity(Class<T> clazz, String sql, Object... params) {
+        T entity = null;
+
+        // 第一：获取连接对象
+        if (connection == null) {
+            throw new RuntimeException("连接对象为null");
+        }
+
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+
+        try {
+            // 第二：预编译SQL语句
+            ps = connection.prepareStatement(sql);
+
+            // 第三：填充参数
+            setParameter(ps, params);
+
+            // 第四：执行SQL语句 - ResultSet
+            rs = ps.executeQuery();
+
+            // 第五：获取结果集元数据对象
+            ResultSetMetaData metaData = rs.getMetaData();
+
+            // 第六：获取查询字段的数量
+            int count = metaData.getColumnCount();
+
+            // 第七：对结果集进行处理 - 遍历结果集，读取结果集中的数据，封装到List集合
+            if (rs.next()) {
+                // 1.实例化实体对象 - 思考：实体对象是谁呢？ - 在这里，谁都可以，我们要做一个通用的查询 - 通过 clazz 这个参数来确定要操作的具体实体对象的Class对象
+                entity = clazz.getConstructor().newInstance();
+                // 2.读取结果集各列的数据 - 思考：有几列数据？是不确定的 - 解决？ - ResultSetMetaData
+                // Object xxx = rs.getObject("yyy") ;
+                for (int i = 1; i <= count; i++) {
+                    // 2.1）获取查询字段名称 - 必须和实体对象的属性名称保持一致 - sta_pos、add_time
+                    String name = getFieldName(clazz, metaData.getColumnLabel(i));
+
+                    // 2.2）根据名称获取实体对象的字段对象
+                    Field declaredField = clazz.getDeclaredField(name);
+
+                    // 2.3）设置字段访问权限
+                    declaredField.setAccessible(true);
+
+                    // 2.4）获取结果集中的数据
+                    Object obj = rs.getObject(i);
+
+                    // 2.5）封装数据到实体对象中 - 思考：获取数据后，给对象的哪个属性初始化呢？ - 反射
+                    declaredField.set(entity, obj);
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        } finally {
+            // 第八：关闭对象
+            close(rs);
+            close(ps);
+            close(connection);
+        }
+
+
+        return entity;
+    }
+
     /**
      * 关闭结果集对象
      *
