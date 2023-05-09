@@ -52,4 +52,19 @@ public class SqlRunnerTest {
             System.out.println(staff);
         }
     }
+
+    @Test
+    public void testQueryCount() {
+        // 实例化 SqlRunner 对象
+        SqlRunner sqlRunner = new SqlRunner(DbUtil.getConnection());
+
+        // 定义要操作的SQL语句
+        String sql = "select count(*) from staffs";
+
+        Long count = sqlRunner.query4Count(sql);
+
+        System.out.println(count);
+
+
+    }
 }

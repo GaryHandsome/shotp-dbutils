@@ -260,6 +260,54 @@ public class SqlRunner {
         return entity;
     }
 
+
+    /**
+     * 查询单行单列的数据 - 记录数
+     *
+     * select count(*) from product
+     *
+     * @param sql
+     * @param params
+     * @return
+     */
+    public Long query4Count(String sql, Object... params) {
+        // 第一：获取连接对象
+        if (connection == null) {
+            throw new RuntimeException("连接对象为null");
+        }
+
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        long count = 0;
+
+        try {
+            // 第二：预编译SQL语句
+            ps = connection.prepareStatement(sql);
+
+            // 第三：填充参数
+            setParameter(ps, params);
+
+            // 第四：执行SQL语句 - ResultSet
+            rs = ps.executeQuery();
+
+            // 第七：对结果集进行处理 - 遍历结果集，读取结果集中的数据，封装到List集合
+            if (rs.next()) {
+                count = rs.getLong(1);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        } finally {
+            // 第八：关闭对象
+            close(rs);
+            close(ps);
+            close(connection);
+        }
+
+        return count;
+    }
+
     /**
      * 关闭结果集对象
      *
